@@ -116,9 +116,12 @@ class CMakeBuild(build_ext):
         # Clone repository if not already present
         if not source_dir.exists():
             print(f"Cloning {repo}...")
-            subprocess.check_call(["git", "clone", repo, str(source_dir)])
+            subprocess.check_call(["git", "clone", "--recursive", repo, str(source_dir)])
         else:
             print(f"Using existing source at {source_dir}")
+            # Update submodules if using existing source
+            print(f"Updating submodules for {name}...")
+            subprocess.check_call(["git", "submodule", "update", "--init", "--recursive"], cwd=source_dir)
 
         # Create build directory
         build_dir.mkdir(parents=True, exist_ok=True)
