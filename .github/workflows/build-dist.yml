@@ -59,37 +59,40 @@ jobs:
         name: distributions
         path: dist/
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@v3
       with:
+        auto-update-conda: true
         python-version: '3.10'
+        channels: conda-forge,defaults
+        channel-priority: strict
+
+    - name: Install conda dependencies
+      shell: bash -l {0}
+      run: |
+        conda install -y \
+          cereal \
+          catch2 \
+          cmake \
+          boost \
+          yaml-cpp \
+          zeromq
 
     - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y \
           build-essential \
-          cmake \
           git \
-          python3-dev \
-          libssl-dev \
-          libboost-dev \
-          libyaml-cpp-dev
-
-    - name: Install Catch2
-      run: |
-        git clone --branch v3.5.0 https://github.com/catchorg/Catch2.git
-        cd Catch2
-        cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
-        cmake --build build --parallel $(nproc)
-        sudo cmake --install build
-        cd ..
+          libssl-dev
 
     - name: Install from source distribution
+      shell: bash -l {0}
       run: |
         pip install dist/*.tar.gz
       timeout-minutes: 45
 
     - name: Test installation
+      shell: bash -l {0}
       run: |
         python -c "import iowarp_core; print('Installed version:', iowarp_core.get_version())"
