@@ -32,7 +32,8 @@ jobs:
           catch2 \
           cmake \
           boost \
-          yaml-cpp
+          yaml-cpp \
+          zeromq
 
     - name: Install system dependencies
       run: |
