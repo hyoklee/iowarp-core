@@ -79,9 +79,14 @@ jobs:
           zeromq \
           cxx-compiler \
           pkg-config \
-          openmpi \
-          mpi \
-          mpi-devel
+          openmpi
+
+    - name: Set up MPI environment
+      shell: bash -l {0}
+      run: |
+        echo "MPI_HOME=$CONDA_PREFIX" >> $GITHUB_ENV
+        echo "MPI_C_COMPILER=$CONDA_PREFIX/bin/mpicc" >> $GITHUB_ENV
+        echo "MPI_CXX_COMPILER=$CONDA_PREFIX/bin/mpic++" >> $GITHUB_ENV
 
     - name: Install system dependencies
       run: |
