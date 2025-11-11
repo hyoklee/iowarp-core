@@ -29,6 +29,7 @@ jobs:
       run: |
         conda install -y \
           cereal \
+          catch2 \
           cmake \
           boost \
           yaml-cpp
@@ -40,16 +41,6 @@ jobs:
           build-essential \
           git \
           libssl-dev
-
-    - name: Install Catch2
-      shell: bash -l {0}
-      run: |
-        git clone --branch v3.5.0 https://github.com/catchorg/Catch2.git
-        cd Catch2
-        cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
-        cmake --build build --parallel $(nproc)
-        sudo cmake --install build
-        cd ..
 
     - name: Upgrade pip and install build tools
       shell: bash -l {0}
