@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "cmake>=3.10"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "iowarp-core"
+version = "0.1.0"
+description = "IOWarp Core: High-performance distributed I/O and task execution runtime"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "IOWarp Team", email = "support@iowarp.org"}
+]
+keywords = ["iowarp", "hpc", "distributed-computing", "io-buffering", "task-runtime"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: C++",
+    "Topic :: System :: Distributed Computing",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Homepage = "https://github.com/iowarp"
+"Bug Tracker" = "https://github.com/iowarp/iowarp-core/issues"
+
+[tool.setuptools]
+packages = ["iowarp_core"]
