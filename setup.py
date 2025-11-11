@@ -34,7 +34,7 @@ class CMakeBuild(build_ext):
                 "-DHSHM_ENABLE_CUDA=OFF",
                 "-DHSHM_ENABLE_ROCM=OFF",
                 "-DHSHM_ENABLE_MPI=OFF",
-                "-DHSHM_ENABLE_ZMQ=OFF",
+                "-DHSHM_ENABLE_ZMQ=ON",
             ]
         },
         {
