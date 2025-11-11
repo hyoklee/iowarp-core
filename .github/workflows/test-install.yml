@@ -36,7 +36,9 @@ jobs:
           zeromq \
           cxx-compiler \
           pkg-config \
-          openmpi
+          openmpi \
+          mpi \
+          mpi-devel
 
     - name: Install system dependencies
       run: |

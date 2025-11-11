@@ -29,6 +29,7 @@ jobs:
       run: |
         conda install -y \
           cereal \
+          catch2 \
           cmake \
           boost \
           yaml-cpp \
