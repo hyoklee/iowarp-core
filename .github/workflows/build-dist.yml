@@ -1,0 +1,83 @@
+name: Build Distribution
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine check-wheel-contents
+
+    - name: Build source distribution
+      run: |
+        python -m build --sdist
+
+    - name: Build wheel
+      run: |
+        python -m build --wheel
+
+    - name: Check distribution
+      run: |
+        twine check dist/*
+        ls -lh dist/
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: distributions
+        path: dist/
+        retention-days: 7
+
+  test-sdist:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: distributions
+        path: dist/
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          git \
+          python3-dev
+
+    - name: Install from source distribution
+      run: |
+        pip install dist/*.tar.gz
+      timeout-minutes: 45
+
+    - name: Test installation
+      run: |
+        python -c "import iowarp_core; print('Installed version:', iowarp_core.get_version())"

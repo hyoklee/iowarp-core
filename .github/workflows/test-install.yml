@@ -1,0 +1,56 @@
+name: Test Installation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          git \
+          python3-dev \
+          libssl-dev
+
+    - name: Upgrade pip and install build tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install build wheel setuptools cmake
+
+    - name: Test package structure (without C++ build)
+      run: |
+        python test_package.py
+
+    - name: Install package (builds C++ components)
+      run: |
+        pip install -v .
+      timeout-minutes: 45
+
+    - name: Verify installation
+      run: |
+        python -c "import iowarp_core; print('Version:', iowarp_core.get_version())"
+        python -c "import iowarp_core; print('Components:', list(iowarp_core.COMPONENTS.keys()))"
+
+    - name: Check installed files
+      run: |
+        pip show iowarp-core
+        python -c "import iowarp_core; import os; print('Module location:', os.path.dirname(iowarp_core.__file__))"
