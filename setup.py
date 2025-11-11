@@ -35,6 +35,7 @@ class CMakeBuild(build_ext):
                 "-DHSHM_ENABLE_ROCM=OFF",
                 "-DHSHM_ENABLE_MPI=OFF",
                 "-DHSHM_ENABLE_ZMQ=ON",
+                "-DHSHM_BUILD_TESTS=OFF",
             ],
             "test_flags": [
                 "-DBUILD_TESTS=OFF",
