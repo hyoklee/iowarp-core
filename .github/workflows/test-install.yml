@@ -35,7 +35,8 @@ jobs:
           yaml-cpp \
           zeromq \
           cxx-compiler \
-          pkg-config
+          pkg-config \
+          openmpi
 
     - name: Install system dependencies
       run: |
