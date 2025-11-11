@@ -35,22 +35,46 @@ class CMakeBuild(build_ext):
                 "-DHSHM_ENABLE_ROCM=OFF",
                 "-DHSHM_ENABLE_MPI=OFF",
                 "-DHSHM_ENABLE_ZMQ=ON",
+            ],
+            "test_flags": [
+                "-DBUILD_TESTS=OFF",
+                "-DBUILD_TEST=OFF",
+                "-DENABLE_TESTS=OFF",
+                "-DENABLE_TESTING=OFF",
             ]
         },
         {
             "name": "runtime",
             "repo": "https://github.com/iowarp/runtime",
-            "cmake_args": []
+            "cmake_args": [],
+            "test_flags": [
+                "-DBUILD_TESTS=OFF",
+                "-DBUILD_TEST=OFF",
+                "-DENABLE_TESTS=OFF",
+                "-DENABLE_TESTING=OFF",
+            ]
         },
         {
             "name": "context-transfer-engine",
             "repo": "https://github.com/iowarp/context-transfer-engine",
-            "cmake_args": []
+            "cmake_args": [],
+            "test_flags": [
+                "-DBUILD_TESTS=OFF",
+                "-DBUILD_TEST=OFF",
+                "-DENABLE_TESTS=OFF",
+                "-DENABLE_TESTING=OFF",
+            ]
         },
         {
             "name": "context-assimilation-engine",
             "repo": "https://github.com/iowarp/context-assimilation-engine",
-            "cmake_args": []
+            "cmake_args": [],
+            "test_flags": [
+                "-DBUILD_TESTS=OFF",
+                "-DBUILD_TEST=OFF",
+                "-DENABLE_TESTS=OFF",
+                "-DENABLE_TESTING=OFF",
+            ]
         },
     ]
 
@@ -77,6 +101,7 @@ class CMakeBuild(build_ext):
         name = component["name"]
         repo = component["repo"]
         cmake_args = component.get("cmake_args", [])
+        test_flags = component.get("test_flags", [])
 
         print(f"\n{'='*60}")
         print(f"Building component: {name}")
@@ -107,6 +132,10 @@ class CMakeBuild(build_ext):
             "-DBUILD_TESTING=OFF",  # Disable tests to avoid Catch2 dependency
         ]
         cmake_configure_args.extend(cmake_args)
+
+        # Add test-disabling flags if not building tests
+        if os.environ.get("IOWARP_BUILD_TESTS", "OFF").upper() == "OFF":
+            cmake_configure_args.extend(test_flags)
 
         # Add Python-specific paths
         if sys.platform.startswith("win"):
