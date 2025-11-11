@@ -76,7 +76,9 @@ jobs:
           cmake \
           boost \
           yaml-cpp \
-          zeromq
+          zeromq \
+          cxx-compiler \
+          pkg-config
 
     - name: Install system dependencies
       run: |
