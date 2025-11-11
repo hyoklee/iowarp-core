@@ -58,7 +58,10 @@ class CMakeBuild(build_ext):
         {
             "name": "context-transfer-engine",
             "repo": "https://github.com/iowarp/context-transfer-engine",
-            "cmake_args": [],
+            "cmake_args": [
+                "-DCTE_BUILD_TESTS=OFF",
+                "-DCTE_ENABLE_TESTS=OFF",
+            ],
             "test_flags": [
                 "-DBUILD_TESTS=OFF",
                 "-DBUILD_TEST=OFF",
@@ -69,7 +72,10 @@ class CMakeBuild(build_ext):
         {
             "name": "context-assimilation-engine",
             "repo": "https://github.com/iowarp/context-assimilation-engine",
-            "cmake_args": [],
+            "cmake_args": [
+                "-DCAE_BUILD_TESTS=OFF",
+                "-DCAE_ENABLE_TESTS=OFF",
+            ],
             "test_flags": [
                 "-DBUILD_TESTS=OFF",
                 "-DBUILD_TEST=OFF",
