@@ -25,7 +25,7 @@ jobs:
     - name: Install build dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install build twine check-wheel-contents
+        pip install build twine check-wheel-contents nanobind
 
     - name: Build source distribution
       run: |
