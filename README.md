@@ -136,6 +136,8 @@ If the build fails, check that you have:
 
 ### Missing Dependencies
 
+**Note**: Tests are disabled by default (`BUILD_TESTING=OFF`), so testing frameworks like Catch2 are not required for normal installation.
+
 On Ubuntu/Debian:
 ```bash
 sudo apt-get update
@@ -151,6 +153,26 @@ sudo yum install cmake git python3-devel
 On macOS:
 ```bash
 brew install cmake git
+```
+
+### Optional Dependencies for Development
+
+If you want to build with tests enabled, you'll need additional dependencies:
+
+**Catch2** (for C++ tests):
+```bash
+# Ubuntu/Debian
+git clone --branch v3.5.0 https://github.com/catchorg/Catch2.git
+cd Catch2
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+cmake --build build --parallel $(nproc)
+sudo cmake --install build
+```
+
+**Other optional libraries** (for full features):
+```bash
+# Ubuntu/Debian
+sudo apt-get install libboost-dev libyaml-cpp-dev libssl-dev
 ```
 
 ## Development

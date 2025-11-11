@@ -104,6 +104,7 @@ class CMakeBuild(build_ext):
             f"-DCMAKE_INSTALL_PREFIX={install_prefix}",
             f"-DCMAKE_BUILD_TYPE=Release",
             "-DBUILD_SHARED_LIBS=ON",
+            "-DBUILD_TESTING=OFF",  # Disable tests to avoid Catch2 dependency
         ]
         cmake_configure_args.extend(cmake_args)
 

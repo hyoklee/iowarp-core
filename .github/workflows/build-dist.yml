@@ -71,7 +71,19 @@ jobs:
           build-essential \
           cmake \
           git \
-          python3-dev
+          python3-dev \
+          libssl-dev \
+          libboost-dev \
+          libyaml-cpp-dev
+
+    - name: Install Catch2
+      run: |
+        git clone --branch v3.5.0 https://github.com/catchorg/Catch2.git
+        cd Catch2
+        cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+        cmake --build build --parallel $(nproc)
+        sudo cmake --install build
+        cd ..
 
     - name: Install from source distribution
       run: |
