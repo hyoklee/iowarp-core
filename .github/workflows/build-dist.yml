@@ -41,7 +41,8 @@ jobs:
           cxx-compiler \
           pkg-config \
           openmpi \
-          elfutils
+          elfutils \
+          zlib
 
     - name: Set up MPI environment
       shell: bash -l {0}
@@ -121,7 +122,8 @@ jobs:
           cxx-compiler \
           pkg-config \
           openmpi \
-          elfutils
+          elfutils \
+          zlib
 
     - name: Set up MPI environment
       shell: bash -l {0}
