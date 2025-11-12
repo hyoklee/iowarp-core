@@ -88,27 +88,43 @@ jobs:
         # Install auditwheel
         pip install auditwheel
 
+        echo "=== Auditwheel version ==="
+        auditwheel --version
+        echo ""
+
         # Create repaired wheels directory
         mkdir -p wheelhouse
 
         # Repair each wheel to bundle all dependencies
         for wheel in dist/*.whl; do
-          echo "Repairing $wheel..."
-          auditwheel repair "$wheel" -w wheelhouse/ --plat manylinux_2_35_x86_64 || \
-          auditwheel repair "$wheel" -w wheelhouse/ --plat manylinux_2_31_x86_64 || \
-          auditwheel repair "$wheel" -w wheelhouse/ || true
+          if [[ "$wheel" == *.whl ]]; then
+            echo "=== Analyzing $wheel ==="
+            auditwheel show "$wheel" || true
+            echo ""
+
+            echo "=== Repairing $wheel ==="
+            # Let auditwheel auto-detect the appropriate manylinux tag
+            if auditwheel repair "$wheel" -w wheelhouse/; then
+              echo "Successfully repaired $wheel"
+            else
+              echo "ERROR: Failed to repair $wheel"
+              exit 1
+            fi
+            echo ""
+          fi
         done
 
-        # Replace original wheels with repaired ones if repair succeeded
+        # Replace original wheels with repaired ones
         if [ -n "$(ls -A wheelhouse 2>/dev/null)" ]; then
-          echo "Replacing wheels with repaired versions..."
+          echo "=== Replacing wheels with repaired versions ==="
           rm -f dist/*.whl
           mv wheelhouse/*.whl dist/
+          echo "Repaired wheels:"
+          ls -lh dist/
         else
-          echo "Warning: auditwheel repair failed, using original wheels"
+          echo "ERROR: No repaired wheels found in wheelhouse/"
+          exit 1
         fi
-
-        ls -lh dist/
 
     - name: Check distribution
       shell: bash -l {0}
