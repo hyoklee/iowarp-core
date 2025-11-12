@@ -35,3 +35,19 @@ Homepage = "https://github.com/iowarp"
 
 [tool.setuptools]
 packages = ["iowarp_core"]
+
+[tool.setuptools.package-data]
+iowarp_core = [
+    "lib/*.so",
+    "lib/*.so.*",
+    "lib/*.a",
+    "lib/*.dylib",
+    "lib/**/*.so",
+    "lib/**/*.so.*",
+    "lib/**/*.a",
+    "lib/**/*.dylib",
+    "include/**/*.h",
+    "include/**/*.hpp",
+    "include/**/*.hxx",
+    "bin/*"
+]
