@@ -42,7 +42,8 @@ jobs:
           pkg-config \
           openmpi \
           elfutils \
-          zlib
+          zlib \
+          h5py
 
     - name: Set up MPI environment
       shell: bash -l {0}
@@ -73,7 +74,7 @@ jobs:
     - name: Build wheel
       shell: bash -l {0}
       run: |
-        python -m build --wheel
+        IOWARP_BUNDLE_BINARIES=ON python -m build --wheel
       timeout-minutes: 45
 
     - name: Check distribution
@@ -123,7 +124,8 @@ jobs:
           pkg-config \
           openmpi \
           elfutils \
-          zlib
+          zlib \
+          h5py
 
     - name: Set up MPI environment
       shell: bash -l {0}
@@ -150,3 +152,27 @@ jobs:
       shell: bash -l {0}
       run: |
         python -c "import iowarp_core; print('Installed version:', iowarp_core.get_version())"
+
+  publish:
+    name: Publish to PyPI
+    needs: [build, test-sdist]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    environment:
+      name: pypi
+      url: https://pypi.org/project/iowarp-core/
+    permissions:
+      id-token: write  # Required for trusted publishing
+
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: distributions
+        path: dist/
+
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_TOKEN }}
+        skip-existing: true
