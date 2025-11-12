@@ -182,6 +182,31 @@ class CMakeBuild(build_ext):
             f"-DPython3_EXECUTABLE={sys.executable}",  # Explicitly pass Python executable
         ]
 
+        # Set RPATH for bundled binaries to find their libraries
+        bundle_binaries = os.environ.get("IOWARP_BUNDLE_BINARIES", "OFF").upper() == "ON"
+        if bundle_binaries:
+            # Use $ORIGIN on Linux, @loader_path on macOS for relative RPATH
+            rpaths = []
+            if sys.platform.startswith("linux"):
+                rpaths.append("$ORIGIN/../lib")
+                # Also add conda lib directory for dependencies
+                conda_prefix = os.environ.get("CONDA_PREFIX")
+                if conda_prefix:
+                    rpaths.append(f"{conda_prefix}/lib")
+            elif sys.platform == "darwin":
+                rpaths.append("@loader_path/../lib")
+                conda_prefix = os.environ.get("CONDA_PREFIX")
+                if conda_prefix:
+                    rpaths.append(f"{conda_prefix}/lib")
+
+            if rpaths:
+                rpath = ":".join(rpaths) if sys.platform.startswith("linux") else ";".join(rpaths)
+                cmake_configure_args.extend([
+                    f"-DCMAKE_INSTALL_RPATH={rpath}",
+                    "-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE",
+                    "-DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE",
+                ])
+
         # Add HDF5_ROOT to use conda's HDF5 (compatible version) instead of system HDF5
         # This avoids API compatibility issues with HDF5 2.0
         conda_prefix = os.environ.get("CONDA_PREFIX")

@@ -24,6 +24,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: C++",
     "Topic :: System :: Distributed Computing",
     "Topic :: Software Development :: Libraries",
@@ -32,6 +33,11 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/iowarp"
 "Bug Tracker" = "https://github.com/iowarp/iowarp/issues"
+
+[project.scripts]
+wrp_cae_omni = "iowarp_core._cli:wrp_cae_omni"
+wrp_cte = "iowarp_core._cli:wrp_cte"
+wrp_runtime = "iowarp_core._cli:wrp_runtime"
 
 [tool.setuptools]
 packages = ["iowarp_core"]
