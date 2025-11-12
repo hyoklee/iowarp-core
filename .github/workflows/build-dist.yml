@@ -13,6 +13,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
 
     steps:
     - name: Checkout repository
@@ -24,7 +27,7 @@ jobs:
       uses: conda-incubator/setup-miniconda@v3
       with:
         auto-update-conda: true
-        python-version: '3.10'
+        python-version: ${{ matrix.python-version }}
         channels: conda-forge,defaults
         channel-priority: strict
 
@@ -86,7 +89,7 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: distributions
+        name: distributions-py${{ matrix.python-version }}
         path: dist/
         retention-days: 7
 
@@ -99,7 +102,7 @@ jobs:
     - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
-        name: distributions
+        name: distributions-py3.10
         path: dist/
 
     - name: Set up Miniconda
@@ -165,11 +168,18 @@ jobs:
       id-token: write  # Required for trusted publishing
 
     steps:
-    - name: Download artifacts
+    - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
-        name: distributions
-        path: dist/
+        pattern: distributions-py*
+        path: dist-temp/
+        merge-multiple: true
+
+    - name: Prepare distribution directory
+      run: |
+        mkdir -p dist/
+        cp dist-temp/*/* dist/ 2>/dev/null || cp dist-temp/* dist/ 2>/dev/null || true
+        ls -lh dist/
 
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
