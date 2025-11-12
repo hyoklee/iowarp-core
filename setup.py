@@ -333,6 +333,7 @@ class CMakeBuild(build_ext):
                     "libhdf5*.so*",
                     "libmpi*.so*",
                     "libzmq*.so*",
+                    "libsodium.so*",  # Required by ZeroMQ
                     "libyaml*.so*",
                     "libz.so*",
                     "libsz.so*",
@@ -341,6 +342,12 @@ class CMakeBuild(build_ext):
                     "libssl.so*",
                     "libcrypto.so*",
                     "libopen-*.so*",  # OpenMPI libraries
+                    "libpmix*.so*",  # PMIx for OpenMPI
+                    "libhwloc*.so*",  # Hardware locality for MPI
+                    "libevent*.so*",  # Event notification library
+                    "libfabric*.so*",  # Networking for MPI
+                    "libucx*.so*",  # Unified Communication X
+                    "libnuma*.so*",  # NUMA support
                     "libstdc++.so*",
                     "libgcc_s.so*",
                     "libgfortran.so*",
