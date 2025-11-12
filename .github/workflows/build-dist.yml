@@ -11,10 +11,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
       matrix:
+        os: ['ubuntu-latest', 'ubuntu-24.04-arm']
         python-version: ['3.10', '3.11', '3.12', '3.13']
 
     steps:
@@ -89,7 +90,7 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: distributions-py${{ matrix.python-version }}
+        name: distributions-${{ matrix.os }}-py${{ matrix.python-version }}
         path: dist/
         retention-days: 7
 
@@ -102,7 +103,7 @@ jobs:
     - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
-        name: distributions-py3.10
+        name: distributions-ubuntu-latest-py3.10
         path: dist/
 
     - name: Set up Miniconda
@@ -165,7 +166,7 @@ jobs:
     - name: Download Python 3.13 wheel artifact
       uses: actions/download-artifact@v4
       with:
-        name: distributions-py3.13
+        name: distributions-ubuntu-latest-py3.13
         path: dist/
 
     - name: Set up Miniconda
@@ -250,7 +251,7 @@ jobs:
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
-        pattern: distributions-py*
+        pattern: distributions-*
         path: dist-temp/
         merge-multiple: true
 
