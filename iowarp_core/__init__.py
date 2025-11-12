@@ -12,7 +12,17 @@ ecosystem, which includes:
 All components are built from C++ source using CMake during installation.
 """
 
-__version__ = "0.1.0"
+try:
+    from importlib.metadata import version, PackageNotFoundError
+except ImportError:
+    from importlib_metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("iowarp-core")
+except PackageNotFoundError:
+    # Package is not installed, use a fallback version
+    __version__ = "0.0.0.dev0"
+
 __author__ = "IOWarp Team"
 __license__ = "BSD-3-Clause"
 
