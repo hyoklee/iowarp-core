@@ -318,6 +318,62 @@ class CMakeBuild(build_ext):
                     dest.chmod(dest.stat().st_mode | 0o111)
                     print(f"  Copied: {rel_path}")
 
+        # Copy conda dependencies
+        conda_prefix = os.environ.get("CONDA_PREFIX")
+        if conda_prefix:
+            print(f"\n" + "="*60)
+            print("Copying conda dependencies")
+            print("="*60 + "\n")
+
+            conda_lib_dir = Path(conda_prefix) / "lib"
+            if conda_lib_dir.exists():
+                # List of library patterns to copy (dependencies needed by IOWarp)
+                lib_patterns = [
+                    "libboost_*.so*",
+                    "libhdf5*.so*",
+                    "libmpi*.so*",
+                    "libzmq*.so*",
+                    "libyaml*.so*",
+                    "libz.so*",
+                    "libsz.so*",
+                    "libaec.so*",
+                    "libcurl.so*",
+                    "libssl.so*",
+                    "libcrypto.so*",
+                    "libopen-*.so*",  # OpenMPI libraries
+                    "libstdc++.so*",
+                    "libgcc_s.so*",
+                    "libgfortran.so*",
+                    "libquadmath.so*",
+                ]
+
+                copied_libs = set()
+                for pattern in lib_patterns:
+                    for lib_file in conda_lib_dir.glob(pattern):
+                        if lib_file.is_file() and not lib_file.is_symlink():
+                            lib_name = lib_file.name
+                            if lib_name not in copied_libs:
+                                dest = lib_dir / lib_name
+                                shutil.copy2(lib_file, dest)
+                                copied_libs.add(lib_name)
+                                print(f"  Copied conda dependency: {lib_name}")
+                        elif lib_file.is_symlink():
+                            # Copy symlinks as well
+                            lib_name = lib_file.name
+                            if lib_name not in copied_libs:
+                                dest = lib_dir / lib_name
+                                target = lib_file.readlink()
+                                # If target is relative, keep it relative
+                                if not target.is_absolute():
+                                    dest.symlink_to(target)
+                                else:
+                                    # If absolute, just copy the file it points to
+                                    shutil.copy2(lib_file, dest)
+                                copied_libs.add(lib_name)
+                                print(f"  Copied conda dependency (symlink): {lib_name}")
+
+                print(f"\nTotal conda dependencies copied: {len(copied_libs)}")
+
         print("\nBinary copying complete!\n")
 
 

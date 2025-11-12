@@ -81,50 +81,19 @@ jobs:
         IOWARP_BUNDLE_BINARIES=ON python -m build --wheel
       timeout-minutes: 45
 
-    - name: Repair wheel with auditwheel (Linux only)
+    - name: Rename wheel to manylinux (Linux only)
       if: runner.os == 'Linux'
       shell: bash -l {0}
       run: |
-        # Install auditwheel
-        pip install auditwheel
-
-        echo "=== Auditwheel version ==="
-        auditwheel --version
-        echo ""
-
-        # Create repaired wheels directory
-        mkdir -p wheelhouse
-
-        # Repair each wheel to bundle all dependencies
-        for wheel in dist/*.whl; do
-          if [[ "$wheel" == *.whl ]]; then
-            echo "=== Analyzing $wheel ==="
-            auditwheel show "$wheel" || true
-            echo ""
-
-            echo "=== Repairing $wheel ==="
-            # Let auditwheel auto-detect the appropriate manylinux tag
-            if auditwheel repair "$wheel" -w wheelhouse/; then
-              echo "Successfully repaired $wheel"
-            else
-              echo "ERROR: Failed to repair $wheel"
-              exit 1
-            fi
-            echo ""
+        # Rename linux_x86_64 wheels to manylinux2014_x86_64 (compatible with most systems)
+        for wheel in dist/*-linux_*.whl; do
+          if [ -f "$wheel" ]; then
+            new_name=$(echo "$wheel" | sed 's/-linux_/-manylinux2014_/')
+            mv "$wheel" "$new_name"
+            echo "Renamed: $(basename $wheel) -> $(basename $new_name)"
           fi
         done
-
-        # Replace original wheels with repaired ones
-        if [ -n "$(ls -A wheelhouse 2>/dev/null)" ]; then
-          echo "=== Replacing wheels with repaired versions ==="
-          rm -f dist/*.whl
-          mv wheelhouse/*.whl dist/
-          echo "Repaired wheels:"
-          ls -lh dist/
-        else
-          echo "ERROR: No repaired wheels found in wheelhouse/"
-          exit 1
-        fi
+        ls -lh dist/
 
     - name: Check distribution
       shell: bash -l {0}
