@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "iowarp-core"
-version = "0.1.0"
+version = "0.0.0"
 description = "IOWarp Core: High-performance distributed I/O and task execution runtime"
 readme = "README.md"
 requires-python = ">=3.8"
-license = {text = "MIT"}
+license = {text = "BSD"}
 authors = [
-    {name = "IOWarp Team", email = "support@iowarp.org"}
+    {name = "IOWarp Team", email = "grc@illinoistech.edu"}
 ]
 keywords = ["iowarp", "hpc", "distributed-computing", "io-buffering", "task-runtime"]
 classifiers = [
@@ -31,7 +31,7 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/iowarp"
-"Bug Tracker" = "https://github.com/iowarp/iowarp-core/issues"
+"Bug Tracker" = "https://github.com/iowarp/iowarp/issues"
 
 [tool.setuptools]
 packages = ["iowarp_core"]
