@@ -81,6 +81,35 @@ jobs:
         IOWARP_BUNDLE_BINARIES=ON python -m build --wheel
       timeout-minutes: 45
 
+    - name: Repair wheel with auditwheel (Linux only)
+      if: runner.os == 'Linux'
+      shell: bash -l {0}
+      run: |
+        # Install auditwheel
+        pip install auditwheel
+
+        # Create repaired wheels directory
+        mkdir -p wheelhouse
+
+        # Repair each wheel to bundle all dependencies
+        for wheel in dist/*.whl; do
+          echo "Repairing $wheel..."
+          auditwheel repair "$wheel" -w wheelhouse/ --plat manylinux_2_35_x86_64 || \
+          auditwheel repair "$wheel" -w wheelhouse/ --plat manylinux_2_31_x86_64 || \
+          auditwheel repair "$wheel" -w wheelhouse/ || true
+        done
+
+        # Replace original wheels with repaired ones if repair succeeded
+        if [ -n "$(ls -A wheelhouse 2>/dev/null)" ]; then
+          echo "Replacing wheels with repaired versions..."
+          rm -f dist/*.whl
+          mv wheelhouse/*.whl dist/
+        else
+          echo "Warning: auditwheel repair failed, using original wheels"
+        fi
+
+        ls -lh dist/
+
     - name: Check distribution
       shell: bash -l {0}
       run: |

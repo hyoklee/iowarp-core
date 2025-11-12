@@ -321,16 +321,6 @@ class CMakeBuild(build_ext):
         print("\nBinary copying complete!\n")
 
 
-class bdist_wheel(_bdist_wheel):
-    """Custom bdist_wheel command to set the proper platform tag."""
-
-    def finalize_options(self):
-        super().finalize_options()
-        # Set platform tag to manylinux_2_39 (or detect from system)
-        # This corresponds to glibc 2.39
-        self.plat_name = self.plat_name.replace('linux', 'manylinux_2_39')
-
-
 # Create extensions list
 # Only include extensions if we want to bundle binaries in the wheel
 # By default, we build as a pure Python wheel since C++ components
@@ -344,7 +334,6 @@ if os.environ.get("IOWARP_BUNDLE_BINARIES", "OFF").upper() == "ON":
     ]
     cmdclass = {
         "build_ext": CMakeBuild,
-        "bdist_wheel": bdist_wheel,
     }
 else:
     ext_modules = []
