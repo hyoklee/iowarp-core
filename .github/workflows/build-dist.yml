@@ -40,7 +40,8 @@ jobs:
           zeromq \
           cxx-compiler \
           pkg-config \
-          openmpi
+          openmpi \
+          elfutils
 
     - name: Set up MPI environment
       shell: bash -l {0}
@@ -55,8 +56,7 @@ jobs:
         sudo apt-get install -y \
           build-essential \
           git \
-          libssl-dev \
-          libelf-dev
+          libssl-dev
 
     - name: Install build dependencies
       shell: bash -l {0}
@@ -120,7 +120,8 @@ jobs:
           zeromq \
           cxx-compiler \
           pkg-config \
-          openmpi
+          openmpi \
+          elfutils
 
     - name: Set up MPI environment
       shell: bash -l {0}
@@ -135,8 +136,7 @@ jobs:
         sudo apt-get install -y \
           build-essential \
           git \
-          libssl-dev \
-          libelf-dev
+          libssl-dev
 
     - name: Install from source distribution
       shell: bash -l {0}
