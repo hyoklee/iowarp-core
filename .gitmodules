@@ -1,0 +1,3 @@
+[submodule "iowarp-core-src"]
+	path = iowarp-core-src
+	url = https://github.com/iowarp/core.git

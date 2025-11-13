@@ -80,7 +80,7 @@ class CMakeBuild(build_ext):
             print(f"  Warning: HDF5 API call pattern not found, skipping fix")
 
     def build_iowarp_core(self, build_temp):
-        """Clone and build IOWarp core using CMake presets."""
+        """Build IOWarp core using CMake presets from included source or clone."""
         print(f"\n{'='*60}")
         print(f"Building IOWarp Core")
         print(f"{'='*60}\n")
@@ -98,15 +98,25 @@ class CMakeBuild(build_ext):
             # Install to system prefix (for editable installs)
             install_prefix = Path(sys.prefix).absolute()
 
-        # Clone repository if not already present
+        # Check if source is included in the package (from source distribution)
+        package_source_dir = Path(__file__).parent.absolute() / "iowarp-core-src"
+
         if not source_dir.exists():
-            print(f"Cloning {self.REPO_URL}...")
-            subprocess.check_call(["git", "clone", "--recursive", self.REPO_URL, str(source_dir)])
+            if package_source_dir.exists():
+                # Use included source from source distribution
+                print(f"Using included source from {package_source_dir}")
+                print(f"Copying source to build directory...")
+                shutil.copytree(package_source_dir, source_dir, symlinks=True)
+            else:
+                # Clone repository (for editable installs or when source not included)
+                print(f"Source not included, cloning {self.REPO_URL}...")
+                subprocess.check_call(["git", "clone", "--recursive", self.REPO_URL, str(source_dir)])
         else:
             print(f"Using existing source at {source_dir}")
-            # Update submodules if using existing source
-            print(f"Updating submodules...")
-            subprocess.check_call(["git", "submodule", "update", "--init", "--recursive"], cwd=source_dir)
+            # Update submodules if using existing source (only works if it's a git repo)
+            if (source_dir / ".git").exists():
+                print(f"Updating submodules...")
+                subprocess.check_call(["git", "submodule", "update", "--init", "--recursive"], cwd=source_dir)
 
         # Apply HDF5 API compatibility fix
         self.apply_hdf5_api_fix(source_dir)
