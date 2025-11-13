@@ -131,6 +131,9 @@ class CMakeBuild(build_ext):
 
         # Set RPATH for bundled binaries to find their libraries
         if bundle_binaries:
+            # Disable building tests for distribution builds
+            additional_args.append("-DWRP_CORE_ENABLE_TESTS=OFF")
+
             rpaths = []
             if sys.platform.startswith("linux"):
                 rpaths.append("$ORIGIN/../lib")
@@ -272,8 +275,20 @@ class CMakeBuild(build_ext):
         src_bin_dir = install_prefix / "bin"
         if src_bin_dir.exists():
             print(f"Copying binaries from {src_bin_dir} to {bin_dir}")
+            # Binaries to exclude from distribution (test executables)
+            exclude_binaries = {
+                "test_binary_assim",
+                "test_error_handling",
+                "test_hdf5_assim",
+                "test_range_assim",
+            }
             for bin_file in src_bin_dir.rglob("*"):
                 if bin_file.is_file():
+                    # Skip test binaries
+                    if bin_file.name in exclude_binaries:
+                        print(f"  Skipped test binary: {bin_file.name}")
+                        continue
+
                     rel_path = bin_file.relative_to(src_bin_dir)
                     dest = bin_dir / rel_path
                     dest.parent.mkdir(parents=True, exist_ok=True)
