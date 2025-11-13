@@ -298,22 +298,32 @@ class CMakeBuild(build_ext):
                     "libmpi*.so*",
                     "libzmq*.so*",
                     "libsodium.so*",  # Required by ZeroMQ
-                    "libyaml*.so*",
+                    "libyaml*.so*",  # Note: libyaml-cpp is built from source (see skip_libs below)
                     "libz.so*",
                     "libsz.so*",
                     "libaec.so*",
                     "libcurl.so*",
                     "libssh2.so*",  # Required by libcurl
                     "libnghttp2.so*",  # Required by libcurl
-                    "libssl.so*",
-                    "libcrypto.so*",
+                    "libssl.so*",  # OpenSSL SSL library
+                    "libcrypto.so*",  # OpenSSL crypto library
                     "libopen-*.so*",  # OpenMPI libraries
                     "libpmix*.so*",  # PMIx for OpenMPI
                     "libhwloc*.so*",  # Hardware locality for MPI
                     "libevent*.so*",  # Event notification library
                     "libfabric*.so*",  # Networking for MPI
+                    "libefa.so*",  # Elastic Fabric Adapter (if available)
+                    "libpsm*.so*",  # Intel PSM/PSM2 (if available)
                     "libucx*.so*",  # Unified Communication X
+                    "libucp*.so*",  # UCX Protocol layer
+                    "libucc*.so*",  # Unified Collective Communication
+                    "libucs*.so*",  # UCX Services layer
+                    "libuct*.so*",  # UCX Transport layer
+                    "libucm*.so*",  # UCX Memory layer
+                    "libicu*.so*",  # ICU (International Components for Unicode)
                     "libnuma*.so*",  # NUMA support
+                    "librdmacm.so*",  # RDMA connection manager
+                    "libibverbs.so*",  # InfiniBand verbs
                     "libstdc++.so*",
                     "libgcc_s.so*",
                     "libgfortran.so*",
@@ -321,10 +331,23 @@ class CMakeBuild(build_ext):
                 ]
 
                 copied_libs = set()
+                # Libraries we build from source and should not copy from conda
+                skip_libs = {
+                    "libyaml-cpp.so",
+                    "libyaml-cpp.so.0.8",
+                    "libyaml-cpp.so.0.8.0",
+                }
+
                 for pattern in lib_patterns:
                     for lib_file in conda_lib_dir.glob(pattern):
+                        lib_name = lib_file.name
+
+                        # Skip libraries we build from source
+                        if lib_name in skip_libs:
+                            print(f"  Skipping conda {lib_name} (using built-from-source version)")
+                            continue
+
                         if lib_file.is_file() and not lib_file.is_symlink():
-                            lib_name = lib_file.name
                             if lib_name not in copied_libs:
                                 dest = lib_dir / lib_name
                                 shutil.copy2(lib_file, dest)
@@ -332,7 +355,6 @@ class CMakeBuild(build_ext):
                                 print(f"  Copied conda dependency: {lib_name}")
                         elif lib_file.is_symlink():
                             # Copy symlinks as well
-                            lib_name = lib_file.name
                             if lib_name not in copied_libs:
                                 dest = lib_dir / lib_name
                                 # Remove existing file/symlink to avoid conflicts
@@ -349,6 +371,55 @@ class CMakeBuild(build_ext):
                                 print(f"  Copied conda dependency (symlink): {lib_name}")
 
                 print(f"\nTotal conda dependencies copied: {len(copied_libs)}")
+
+        # Fix RPATH in all bundled libraries to prefer bundled dependencies
+        print(f"\n" + "="*60)
+        print("Fixing RPATH in bundled libraries")
+        print("="*60 + "\n")
+
+        # Check if patchelf is available
+        patchelf_available = True
+        try:
+            subprocess.run(["patchelf", "--version"],
+                         capture_output=True, check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print("  Warning: patchelf not found, skipping RPATH fixes")
+            print("  Libraries may fail to find bundled dependencies")
+            patchelf_available = False
+
+        if patchelf_available:
+            # Fix RPATH for all .so files in lib directory
+            for lib_file in lib_dir.rglob("*.so*"):
+                if lib_file.is_file() and not lib_file.is_symlink():
+                    try:
+                        # Set RPATH to look in same directory first
+                        # $ORIGIN means the directory containing the library
+                        subprocess.run([
+                            "patchelf",
+                            "--set-rpath", "$ORIGIN:$ORIGIN/..:$ORIGIN/../lib",
+                            "--force-rpath",
+                            str(lib_file)
+                        ], capture_output=True, check=True)
+                        print(f"  Fixed RPATH: {lib_file.name}")
+                    except subprocess.CalledProcessError as e:
+                        # Some files may not be ELF files or may not have RPATH
+                        # This is fine, just skip them
+                        pass
+
+            # Fix RPATH for binaries
+            for bin_file in bin_dir.rglob("*"):
+                if bin_file.is_file() and not bin_file.is_symlink():
+                    try:
+                        # Set RPATH to look in ../lib
+                        subprocess.run([
+                            "patchelf",
+                            "--set-rpath", "$ORIGIN/../lib",
+                            "--force-rpath",
+                            str(bin_file)
+                        ], capture_output=True, check=True)
+                        print(f"  Fixed RPATH: bin/{bin_file.name}")
+                    except subprocess.CalledProcessError:
+                        pass
 
         print("\nBinary copying complete!\n")
 
