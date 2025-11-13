@@ -18,11 +18,9 @@ graft context-transfer-engine
 graft context-assimilation-engine
 graft context-transport-primitives
 graft context-exploration-engine
+graft external
 graft docker
 graft ai-prompts
-
-# Note: external/ dependencies (cereal, yaml-cpp, etc.) are provided by conda/system packages
-# The build system will find them via find_package() in CMake
 
 # Exclude build artifacts and git directories
 prune build

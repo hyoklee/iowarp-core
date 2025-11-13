@@ -111,7 +111,7 @@ class CMakeBuild(build_ext):
                 for item in ["CMakeLists.txt", "CMakePresets.json", "context-runtime",
                            "context-transfer-engine", "context-assimilation-engine",
                            "context-transport-primitives", "context-exploration-engine",
-                           "docker", "ai-prompts"]:
+                           "external", "docker", "ai-prompts"]:
                     src_path = package_root / item
                     if src_path.exists():
                         dest_path = source_dir / item

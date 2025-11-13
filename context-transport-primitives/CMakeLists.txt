@@ -321,8 +321,4 @@ install(EXPORT ${HSHM_EXPORTED_TARGETS}
     DESTINATION lib/cmake/HermesShm
 )
 
-# jarvis_repo_add is not available in pip distribution builds
-# Only used for development/testing with Jarvis framework
-if(COMMAND jarvis_repo_add)
-  jarvis_repo_add("${HSHM_ROOT}/test/jarvis_hshm" "")
-endif()
+jarvis_repo_add("${HSHM_ROOT}/test/jarvis_hshm" "")
