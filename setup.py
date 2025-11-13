@@ -304,6 +304,7 @@ class CMakeBuild(build_ext):
                     "libaec.so*",
                     "libcurl.so*",
                     "libssh2.so*",  # Required by libcurl
+                    "libnghttp2.so*",  # Required by libcurl
                     "libssl.so*",
                     "libcrypto.so*",
                     "libopen-*.so*",  # OpenMPI libraries
