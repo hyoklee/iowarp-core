@@ -92,3 +92,43 @@ def wrp_cte():
 def wrp_runtime():
     """Entry point for wrp_runtime binary (Chimaera)."""
     run_binary("wrp_runtime")
+
+
+def chi_refresh_repo():
+    """Entry point for chi_refresh_repo binary."""
+    run_binary("chi_refresh_repo")
+
+
+def chimaera_compose():
+    """Entry point for chimaera_compose binary."""
+    run_binary("chimaera_compose")
+
+
+def chimaera_start_runtime():
+    """Entry point for chimaera_start_runtime binary."""
+    run_binary("chimaera_start_runtime")
+
+
+def chimaera_stop_runtime():
+    """Entry point for chimaera_stop_runtime binary."""
+    run_binary("chimaera_stop_runtime")
+
+
+def test_binary_assim():
+    """Entry point for test_binary_assim binary."""
+    run_binary("test_binary_assim")
+
+
+def test_error_handling():
+    """Entry point for test_error_handling binary."""
+    run_binary("test_error_handling")
+
+
+def test_hdf5_assim():
+    """Entry point for test_hdf5_assim binary."""
+    run_binary("test_hdf5_assim")
+
+
+def test_range_assim():
+    """Entry point for test_range_assim binary."""
+    run_binary("test_range_assim")
