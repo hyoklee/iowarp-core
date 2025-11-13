@@ -1,5 +1,13 @@
 name: Build Distribution
 
+# This workflow builds and publishes ONLY source distributions (sdist) to PyPI
+# Binary wheel distribution is currently DISABLED
+#
+# To re-enable binary wheel distribution:
+# 1. Uncomment the "Build wheel" and "Rename wheel to manylinux" steps
+# 2. Uncomment the "test-wheel-py313" job
+# 3. Update publish job needs to include: [build, test-sdist, test-wheel-py313]
+
 on:
   push:
     branches: [ main ]
@@ -75,25 +83,28 @@ jobs:
       run: |
         python -m build --sdist
 
-    - name: Build wheel
-      shell: bash -l {0}
-      run: |
-        IOWARP_BUNDLE_BINARIES=ON python -m build --wheel
-      timeout-minutes: 45
-
-    - name: Rename wheel to manylinux (Linux only)
-      if: runner.os == 'Linux'
-      shell: bash -l {0}
-      run: |
-        # Rename linux_x86_64 wheels to manylinux2014_x86_64 (compatible with most systems)
-        for wheel in dist/*-linux_*.whl; do
-          if [ -f "$wheel" ]; then
-            new_name=$(echo "$wheel" | sed 's/-linux_/-manylinux2014_/')
-            mv "$wheel" "$new_name"
-            echo "Renamed: $(basename $wheel) -> $(basename $new_name)"
-          fi
-        done
-        ls -lh dist/
+    # Binary wheel distribution disabled - publish source distribution only
+    # Uncomment to enable binary wheel distribution in the future:
+    #
+    # - name: Build wheel
+    #   shell: bash -l {0}
+    #   run: |
+    #     IOWARP_BUNDLE_BINARIES=ON python -m build --wheel
+    #   timeout-minutes: 45
+    #
+    # - name: Rename wheel to manylinux (Linux only)
+    #   if: runner.os == 'Linux'
+    #   shell: bash -l {0}
+    #   run: |
+    #     # Rename linux_x86_64 wheels to manylinux2014_x86_64 (compatible with most systems)
+    #     for wheel in dist/*-linux_*.whl; do
+    #       if [ -f "$wheel" ]; then
+    #         new_name=$(echo "$wheel" | sed 's/-linux_/-manylinux2014_/')
+    #         mv "$wheel" "$new_name"
+    #         echo "Renamed: $(basename $wheel) -> $(basename $new_name)"
+    #       fi
+    #     done
+    #     ls -lh dist/
 
     - name: Check distribution
       shell: bash -l {0}
@@ -171,88 +182,92 @@ jobs:
       run: |
         python -c "import iowarp_core; print('Installed version:', iowarp_core.get_version())"
 
-  test-wheel-py313:
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-
-    steps:
-    - name: Download Python 3.13 wheel artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: distributions-ubuntu-latest-py3.13
-        path: dist/
-
-    - name: Set up Miniconda
-      uses: conda-incubator/setup-miniconda@v3
-      with:
-        auto-update-conda: true
-        python-version: '3.13'
-        channels: conda-forge,defaults
-        channel-priority: strict
-
-    - name: Install conda dependencies
-      shell: bash -l {0}
-      run: |
-        conda install -y \
-          cereal \
-          catch2 \
-          cmake \
-          boost \
-          yaml-cpp \
-          zeromq \
-          cxx-compiler \
-          pkg-config \
-          openmpi \
-          elfutils \
-          zlib \
-          h5py
-
-    - name: Set up MPI environment
-      shell: bash -l {0}
-      run: |
-        echo "MPI_HOME=$CONDA_PREFIX" >> $GITHUB_ENV
-        echo "MPI_C_COMPILER=$CONDA_PREFIX/bin/mpicc" >> $GITHUB_ENV
-        echo "MPI_CXX_COMPILER=$CONDA_PREFIX/bin/mpic++" >> $GITHUB_ENV
-
-    - name: Install wheel checking tools
-      shell: bash -l {0}
-      run: |
-        pip install check-wheel-contents auditwheel
-
-    - name: Check wheel contents
-      shell: bash -l {0}
-      run: |
-        echo "=== Wheel contents check ==="
-        check-wheel-contents dist/*.whl || true
-        echo ""
-        echo "=== Wheel file info ==="
-        ls -lh dist/
-        echo ""
-        echo "=== Unzip wheel to inspect structure ==="
-        unzip -l dist/*.whl | head -50
-
-    - name: Check wheel with auditwheel
-      shell: bash -l {0}
-      run: |
-        echo "=== Auditwheel check ==="
-        auditwheel show dist/*.whl || true
-
-    - name: Install from wheel
-      shell: bash -l {0}
-      run: |
-        pip install dist/*.whl
-
-    - name: Test installation
-      shell: bash -l {0}
-      run: |
-        python -c "import iowarp_core; print('Installed version:', iowarp_core.get_version())"
-        python -c "import sys; print('Python version:', sys.version)"
-        python -c "import iowarp_core; print('Module location:', iowarp_core.__file__)"
+  # Binary wheel testing disabled - uncomment when binary distribution is re-enabled
+  #
+  # test-wheel-py313:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 60
+  #
+  #   steps:
+  #   - name: Download Python 3.13 wheel artifact
+  #     uses: actions/download-artifact@v4
+  #     with:
+  #       name: distributions-ubuntu-latest-py3.13
+  #       path: dist/
+  #
+  #   - name: Set up Miniconda
+  #     uses: conda-incubator/setup-miniconda@v3
+  #     with:
+  #       auto-update-conda: true
+  #       python-version: '3.13'
+  #       channels: conda-forge,defaults
+  #       channel-priority: strict
+  #
+  #   - name: Install conda dependencies
+  #     shell: bash -l {0}
+  #     run: |
+  #       conda install -y \
+  #         cereal \
+  #         catch2 \
+  #         cmake \
+  #         boost \
+  #         yaml-cpp \
+  #         zeromq \
+  #         cxx-compiler \
+  #         pkg-config \
+  #         openmpi \
+  #         elfutils \
+  #         zlib \
+  #         h5py
+  #
+  #   - name: Set up MPI environment
+  #     shell: bash -l {0}
+  #     run: |
+  #       echo "MPI_HOME=$CONDA_PREFIX" >> $GITHUB_ENV
+  #       echo "MPI_C_COMPILER=$CONDA_PREFIX/bin/mpicc" >> $GITHUB_ENV
+  #       echo "MPI_CXX_COMPILER=$CONDA_PREFIX/bin/mpic++" >> $GITHUB_ENV
+  #
+  #   - name: Install wheel checking tools
+  #     shell: bash -l {0}
+  #     run: |
+  #       pip install check-wheel-contents auditwheel
+  #
+  #   - name: Check wheel contents
+  #     shell: bash -l {0}
+  #     run: |
+  #       echo "=== Wheel contents check ==="
+  #       check-wheel-contents dist/*.whl || true
+  #       echo ""
+  #       echo "=== Wheel file info ==="
+  #       ls -lh dist/
+  #       echo ""
+  #       echo "=== Unzip wheel to inspect structure ==="
+  #       unzip -l dist/*.whl | head -50
+  #
+  #   - name: Check wheel with auditwheel
+  #     shell: bash -l {0}
+  #     run: |
+  #       echo "=== Auditwheel check ==="
+  #       auditwheel show dist/*.whl || true
+  #
+  #   - name: Install from wheel
+  #     shell: bash -l {0}
+  #     run: |
+  #       pip install dist/*.whl
+  #
+  #   - name: Test installation
+  #     shell: bash -l {0}
+  #     run: |
+  #       python -c "import iowarp_core; print('Installed version:', iowarp_core.get_version())"
+  #       python -c "import sys; print('Python version:', sys.version)"
+  #       python -c "import iowarp_core; print('Module location:', iowarp_core.__file__)"
 
   publish:
     name: Publish to PyPI
-    needs: [build, test-sdist, test-wheel-py313]
+    # Only source distribution (sdist) is published - binary wheels disabled
+    # To re-enable binary distribution, add test-wheel-py313 to needs list
+    needs: [build, test-sdist]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     environment:
@@ -273,7 +288,10 @@ jobs:
       run: |
         mkdir -p dist/
         cp dist-temp/*/* dist/ 2>/dev/null || cp dist-temp/* dist/ 2>/dev/null || true
+        echo "=== Distribution files to publish ==="
         ls -lh dist/
+        echo "=== Note: Only source distributions (.tar.gz) will be published ==="
+        ls dist/*.tar.gz 2>/dev/null || echo "No source distributions found"
 
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
