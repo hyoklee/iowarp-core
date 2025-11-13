@@ -2,7 +2,9 @@ include README.md
 include LICENSE
 include pyproject.toml
 include setup.py
-include .gitmodules
+include CMakeLists.txt
+include CMakePresets.json
+include CLAUDE.md
 
 # Include Python package files
 recursive-include iowarp_core *.py
@@ -10,16 +12,21 @@ recursive-include iowarp_core/lib *.so *.so.* *.a *.dylib
 recursive-include iowarp_core/include *.h *.hpp *.hxx
 recursive-include iowarp_core/bin *
 
-# Include C++ source code from submodule
-graft iowarp-core-src
-prune iowarp-core-src/.git
-prune iowarp-core-src/build
-prune iowarp-core-src/external/Catch2/.git
-prune iowarp-core-src/external/cereal/.git
-prune iowarp-core-src/external/nanobind/.git
-prune iowarp-core-src/external/yaml-cpp/.git
-prune iowarp-core-src/external/nanobind/ext/robin_map/.git
+# Include C++ source code directories (direct copy)
+graft context-runtime
+graft context-transfer-engine
+graft context-assimilation-engine
+graft context-transport-primitives
+graft context-exploration-engine
+graft external
+graft docker
+graft ai-prompts
 
+# Exclude build artifacts and git directories
+prune build
 global-exclude __pycache__
 global-exclude *.py[co]
 global-exclude .DS_Store
+global-exclude *.o
+global-exclude *.so
+global-exclude *.a

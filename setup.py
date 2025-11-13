@@ -98,25 +98,35 @@ class CMakeBuild(build_ext):
             # Install to system prefix (for editable installs)
             install_prefix = Path(sys.prefix).absolute()
 
-        # Check if source is included in the package (from source distribution)
-        package_source_dir = Path(__file__).parent.absolute() / "iowarp-core-src"
+        # Check if source is in the package root directory (direct copy)
+        package_root = Path(__file__).parent.absolute()
+        root_cmake = package_root / "CMakeLists.txt"
 
         if not source_dir.exists():
-            if package_source_dir.exists():
-                # Use included source from source distribution
-                print(f"Using included source from {package_source_dir}")
+            if root_cmake.exists():
+                # Use source from package root (direct copy approach)
+                print(f"Using C++ source from package root: {package_root}")
                 print(f"Copying source to build directory...")
-                shutil.copytree(package_source_dir, source_dir, symlinks=True)
+                # Copy all C++ source directories
+                for item in ["CMakeLists.txt", "CMakePresets.json", "context-runtime",
+                           "context-transfer-engine", "context-assimilation-engine",
+                           "context-transport-primitives", "context-exploration-engine",
+                           "external", "docker", "ai-prompts"]:
+                    src_path = package_root / item
+                    if src_path.exists():
+                        dest_path = source_dir / item
+                        if src_path.is_dir():
+                            shutil.copytree(src_path, dest_path, symlinks=True, dirs_exist_ok=True)
+                        else:
+                            source_dir.mkdir(parents=True, exist_ok=True)
+                            shutil.copy2(src_path, dest_path)
+                print(f"Source copied to {source_dir}")
             else:
-                # Clone repository (for editable installs or when source not included)
-                print(f"Source not included, cloning {self.REPO_URL}...")
+                # Clone repository (fallback for old source distributions)
+                print(f"Source not found in package root, cloning {self.REPO_URL}...")
                 subprocess.check_call(["git", "clone", "--recursive", self.REPO_URL, str(source_dir)])
         else:
             print(f"Using existing source at {source_dir}")
-            # Update submodules if using existing source (only works if it's a git repo)
-            if (source_dir / ".git").exists():
-                print(f"Updating submodules...")
-                subprocess.check_call(["git", "submodule", "update", "--init", "--recursive"], cwd=source_dir)
 
         # Apply HDF5 API compatibility fix
         self.apply_hdf5_api_fix(source_dir)
