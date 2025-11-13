@@ -24,71 +24,13 @@ class CMakeExtension(Extension):
 
 
 class CMakeBuild(build_ext):
-    """Custom build command that builds CMake projects in order."""
+    """Custom build command that builds IOWarp core using CMake presets."""
 
-    # Define the components to build in order
-    COMPONENTS = [
-        {
-            "name": "context-transport-primitives",
-            "repo": "https://github.com/iowarp/context-transport-primitives",
-            "cmake_args": [
-                "-DHSHM_ENABLE_CUDA=OFF",
-                "-DHSHM_ENABLE_ROCM=OFF",
-                "-DHSHM_ENABLE_MPI=OFF",
-                "-DHSHM_ENABLE_ZMQ=ON",
-                "-DHSHM_ENABLE_ELF=ON",
-                "-DHSHM_BUILD_TESTS=OFF",
-            ],
-            "test_flags": [
-                "-DBUILD_TESTS=OFF",
-                "-DBUILD_TEST=OFF",
-                "-DENABLE_TESTS=OFF",
-                "-DENABLE_TESTING=OFF",
-            ]
-        },
-        {
-            "name": "runtime",
-            "repo": "https://github.com/iowarp/runtime",
-            "cmake_args": [],
-            "test_flags": [
-                "-DBUILD_TESTS=OFF",
-                "-DBUILD_TEST=OFF",
-                "-DENABLE_TESTS=OFF",
-                "-DENABLE_TESTING=OFF",
-            ]
-        },
-        {
-            "name": "context-transfer-engine",
-            "repo": "https://github.com/iowarp/context-transfer-engine",
-            "cmake_args": [
-                "-DCTE_BUILD_TESTS=OFF",
-                "-DCTE_ENABLE_TESTS=OFF",
-            ],
-            "test_flags": [
-                "-DBUILD_TESTS=OFF",
-                "-DBUILD_TEST=OFF",
-                "-DENABLE_TESTS=OFF",
-                "-DENABLE_TESTING=OFF",
-            ]
-        },
-        {
-            "name": "context-assimilation-engine",
-            "repo": "https://github.com/iowarp/context-assimilation-engine",
-            "cmake_args": [
-                "-DCAE_BUILD_TESTS=OFF",
-                "-DCAE_ENABLE_TESTS=OFF",
-            ],
-            "test_flags": [
-                "-DBUILD_TESTS=OFF",
-                "-DBUILD_TEST=OFF",
-                "-DENABLE_TESTS=OFF",
-                "-DENABLE_TESTING=OFF",
-            ]
-        },
-    ]
+    # Single repository for all components
+    REPO_URL = "https://github.com/iowarp/core"
 
     def run(self):
-        """Build all CMake components in order."""
+        """Build IOWarp core following the quick installation steps."""
         try:
             subprocess.check_output(["cmake", "--version"])
         except OSError:
@@ -101,49 +43,22 @@ class CMakeBuild(build_ext):
         build_temp = Path(self.build_temp).absolute()
         build_temp.mkdir(parents=True, exist_ok=True)
 
-        # Build each component in order
-        for component in self.COMPONENTS:
-            self.build_component(component, build_temp)
+        # Build the unified core
+        self.build_iowarp_core(build_temp)
 
         # If bundling binaries, copy them to the package directory
         if os.environ.get("IOWARP_BUNDLE_BINARIES", "OFF").upper() == "ON":
             self.copy_binaries_to_package(build_temp)
 
-    def apply_patches(self, component_name, source_dir):
-        """Apply necessary patches to component source code."""
-        if component_name == "context-assimilation-engine":
-            # Fix HDF5 1.12+ API compatibility
-            hdf5_file = source_dir / "core/src/factory/hdf5_file_assimilator.cc"
-            if hdf5_file.exists():
-                print(f"Patching {hdf5_file} for HDF5 1.12+ API compatibility...")
-                content = hdf5_file.read_text()
-
-                # Fix H5O_info_t to H5O_info2_t
-                content = content.replace("H5O_info_t obj_info;", "H5O_info2_t obj_info;")
-
-                # Fix H5Oget_info_by_name to H5Oget_info_by_name3 with fields parameter
-                content = content.replace(
-                    "H5Oget_info_by_name(loc_id, name, &obj_info, H5P_DEFAULT)",
-                    "H5Oget_info_by_name3(loc_id, name, &obj_info, H5O_INFO_BASIC, H5P_DEFAULT)"
-                )
-
-                hdf5_file.write_text(content)
-                print(f"Successfully patched {hdf5_file}")
-
-    def build_component(self, component, build_temp):
-        """Clone and build a single component."""
-        name = component["name"]
-        repo = component["repo"]
-        cmake_args = component.get("cmake_args", [])
-        test_flags = component.get("test_flags", [])
-
+    def build_iowarp_core(self, build_temp):
+        """Clone and build IOWarp core using CMake presets."""
         print(f"\n{'='*60}")
-        print(f"Building component: {name}")
+        print(f"Building IOWarp Core")
         print(f"{'='*60}\n")
 
         # Set up directories
-        source_dir = build_temp / name
-        build_dir = build_temp / f"{name}-build"
+        source_dir = build_temp / "iowarp-core"
+        build_dir = source_dir / "build"
 
         # Determine install prefix based on whether we're bundling binaries
         bundle_binaries = os.environ.get("IOWARP_BUNDLE_BINARIES", "OFF").upper() == "ON"
@@ -156,40 +71,37 @@ class CMakeBuild(build_ext):
 
         # Clone repository if not already present
         if not source_dir.exists():
-            print(f"Cloning {repo}...")
-            subprocess.check_call(["git", "clone", "--recursive", repo, str(source_dir)])
+            print(f"Cloning {self.REPO_URL}...")
+            subprocess.check_call(["git", "clone", "--recursive", self.REPO_URL, str(source_dir)])
         else:
             print(f"Using existing source at {source_dir}")
             # Update submodules if using existing source
-            print(f"Updating submodules for {name}...")
+            print(f"Updating submodules...")
             subprocess.check_call(["git", "submodule", "update", "--init", "--recursive"], cwd=source_dir)
 
-        # Apply patches for specific components
-        self.apply_patches(name, source_dir)
+        # Determine build type
+        build_type = os.environ.get("IOWARP_BUILD_TYPE", "release").lower()
+        preset = f"{build_type}"
 
-        # Create build directory
-        build_dir.mkdir(parents=True, exist_ok=True)
+        print(f"Configuring with CMake preset: {preset}")
 
-        # Configure CMake
-        cmake_configure_args = [
+        # Configure using CMake preset
+        cmake_preset_args = [
             "cmake",
-            str(source_dir),
-            f"-DCMAKE_INSTALL_PREFIX={install_prefix}",
-            f"-DCMAKE_PREFIX_PATH={install_prefix}",
-            f"-DCMAKE_BUILD_TYPE=Release",
-            "-DBUILD_SHARED_LIBS=ON",
-            "-DBUILD_TESTING=OFF",  # Disable tests to avoid Catch2 dependency
-            f"-DPython3_EXECUTABLE={sys.executable}",  # Explicitly pass Python executable
+            f"--preset={preset}",
         ]
 
+        # Additional configuration options
+        additional_args = []
+
+        # Override install prefix
+        additional_args.append(f"-DCMAKE_INSTALL_PREFIX={install_prefix}")
+
         # Set RPATH for bundled binaries to find their libraries
-        bundle_binaries = os.environ.get("IOWARP_BUNDLE_BINARIES", "OFF").upper() == "ON"
         if bundle_binaries:
-            # Use $ORIGIN on Linux, @loader_path on macOS for relative RPATH
             rpaths = []
             if sys.platform.startswith("linux"):
                 rpaths.append("$ORIGIN/../lib")
-                # Also add conda lib directory for dependencies
                 conda_prefix = os.environ.get("CONDA_PREFIX")
                 if conda_prefix:
                     rpaths.append(f"{conda_prefix}/lib")
@@ -201,35 +113,41 @@ class CMakeBuild(build_ext):
 
             if rpaths:
                 rpath = ":".join(rpaths) if sys.platform.startswith("linux") else ";".join(rpaths)
-                cmake_configure_args.extend([
+                additional_args.extend([
                     f"-DCMAKE_INSTALL_RPATH={rpath}",
                     "-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE",
                     "-DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE",
                 ])
 
-        # Add HDF5_ROOT to use conda's HDF5 (compatible version) instead of system HDF5
-        # This avoids API compatibility issues with HDF5 2.0
+        # Add HDF5_ROOT to use conda's HDF5 if available
         conda_prefix = os.environ.get("CONDA_PREFIX")
         if conda_prefix:
-            cmake_configure_args.append(f"-DHDF5_ROOT={conda_prefix}")
+            # Explicitly ignore paths that might have incompatible HDF5
+            home_dir = str(Path.home())
+            hdf5_lib = f"{conda_prefix}/lib/libhdf5.so"
+            additional_args.extend([
+                f"-DHDF5_ROOT={conda_prefix}",
+                f"-DHDF5_C_LIBRARY={hdf5_lib}",
+                f"-DHDF5_INCLUDE_DIR={conda_prefix}/include",
+                f"-DCMAKE_PREFIX_PATH={conda_prefix}",
+                f"-DCMAKE_IGNORE_PATH=/usr/lib/x86_64-linux-gnu/hdf5;{home_dir}/hdf5-install;{home_dir}/hdf5;/opt/hdf5",
+                "-DCMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH=FALSE",
+            ])
 
-        cmake_configure_args.extend(cmake_args)
-
-        # Add test-disabling flags if not building tests
-        if os.environ.get("IOWARP_BUILD_TESTS", "OFF").upper() == "OFF":
-            cmake_configure_args.extend(test_flags)
-
-        # Add Python-specific paths
-        if sys.platform.startswith("win"):
-            cmake_configure_args.append(f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={self.build_lib}")
-
-        print(f"Configuring with CMake...")
-        print(f"Command: {' '.join(cmake_configure_args)}")
-        subprocess.check_call(cmake_configure_args, cwd=build_dir)
+        # Apply additional CMake arguments if preset configuration needs overrides
+        if additional_args:
+            # First configure with preset
+            subprocess.check_call(cmake_preset_args, cwd=source_dir)
+            # Then apply additional configuration
+            cmake_config_args = ["cmake", "build"] + additional_args
+            print(f"Applying additional configuration: {' '.join(additional_args)}")
+            subprocess.check_call(cmake_config_args, cwd=source_dir)
+        else:
+            subprocess.check_call(cmake_preset_args, cwd=source_dir)
 
         # Build
-        print(f"Building {name}...")
-        build_args = ["cmake", "--build", ".", "--config", "Release"]
+        print(f"\nBuilding IOWarp core...")
+        build_args = ["cmake", "--build", "build"]
 
         # Determine number of parallel jobs
         if hasattr(self, "parallel") and self.parallel:
@@ -239,14 +157,14 @@ class CMakeBuild(build_ext):
             import multiprocessing
             build_args.extend(["--parallel", str(multiprocessing.cpu_count())])
 
-        subprocess.check_call(build_args, cwd=build_dir)
+        subprocess.check_call(build_args, cwd=source_dir)
 
         # Install
-        print(f"Installing {name}...")
-        install_args = ["cmake", "--install", "."]
-        subprocess.check_call(install_args, cwd=build_dir)
+        print(f"\nInstalling IOWarp core...")
+        install_args = ["cmake", "--install", "build", "--prefix", str(install_prefix)]
+        subprocess.check_call(install_args, cwd=source_dir)
 
-        print(f"\n{name} built and installed successfully!\n")
+        print(f"\nIOWarp core built and installed successfully!\n")
 
     def copy_binaries_to_package(self, build_temp):
         """Copy built binaries and headers into the Python package for wheel bundling."""
@@ -271,13 +189,20 @@ class CMakeBuild(build_ext):
         if src_lib_dir.exists():
             print(f"Copying libraries from {src_lib_dir} to {lib_dir}")
             for lib_file in src_lib_dir.rglob("*"):
-                if lib_file.is_file():
+                if lib_file.is_file() or lib_file.is_symlink():
                     # Copy .so, .a, and .dylib files
                     if lib_file.suffix in [".so", ".a", ".dylib"] or ".so." in lib_file.name:
                         rel_path = lib_file.relative_to(src_lib_dir)
                         dest = lib_dir / rel_path
                         dest.parent.mkdir(parents=True, exist_ok=True)
-                        shutil.copy2(lib_file, dest)
+                        # Remove existing file/symlink to avoid conflicts
+                        if dest.exists() or dest.is_symlink():
+                            dest.unlink()
+                        # Copy file or symlink
+                        if lib_file.is_symlink():
+                            os.symlink(os.readlink(lib_file), dest)
+                        else:
+                            shutil.copy2(lib_file, dest)
                         print(f"  Copied: {rel_path}")
 
         # Copy lib64 if it exists (some systems use lib64)
@@ -285,12 +210,19 @@ class CMakeBuild(build_ext):
         if src_lib64_dir.exists():
             print(f"Copying libraries from {src_lib64_dir} to {lib_dir}")
             for lib_file in src_lib64_dir.rglob("*"):
-                if lib_file.is_file():
+                if lib_file.is_file() or lib_file.is_symlink():
                     if lib_file.suffix in [".so", ".a", ".dylib"] or ".so." in lib_file.name:
                         rel_path = lib_file.relative_to(src_lib64_dir)
                         dest = lib_dir / rel_path
                         dest.parent.mkdir(parents=True, exist_ok=True)
-                        shutil.copy2(lib_file, dest)
+                        # Remove existing file/symlink to avoid conflicts
+                        if dest.exists() or dest.is_symlink():
+                            dest.unlink()
+                        # Copy file or symlink
+                        if lib_file.is_symlink():
+                            os.symlink(os.readlink(lib_file), dest)
+                        else:
+                            shutil.copy2(lib_file, dest)
                         print(f"  Copied: {rel_path}")
 
         # Copy headers
@@ -339,6 +271,7 @@ class CMakeBuild(build_ext):
                     "libsz.so*",
                     "libaec.so*",
                     "libcurl.so*",
+                    "libssh2.so*",  # Required by libcurl
                     "libssl.so*",
                     "libcrypto.so*",
                     "libopen-*.so*",  # OpenMPI libraries
@@ -369,6 +302,9 @@ class CMakeBuild(build_ext):
                             lib_name = lib_file.name
                             if lib_name not in copied_libs:
                                 dest = lib_dir / lib_name
+                                # Remove existing file/symlink to avoid conflicts
+                                if dest.exists() or dest.is_symlink():
+                                    dest.unlink()
                                 target = lib_file.readlink()
                                 # If target is relative, keep it relative
                                 if not target.is_absolute():
