@@ -440,22 +440,18 @@ class CMakeBuild(build_ext):
 
 
 # Create extensions list
-# Only include extensions if we want to bundle binaries in the wheel
-# By default, we build as a pure Python wheel since C++ components
-# are installed to the system prefix during installation
-if os.environ.get("IOWARP_BUNDLE_BINARIES", "OFF").upper() == "ON":
-    ext_modules = [
-        CMakeExtension(
-            "iowarp_core._native",
-            sourcedir=".",
-        )
-    ]
-    cmdclass = {
-        "build_ext": CMakeBuild,
-    }
-else:
-    ext_modules = []
-    cmdclass = {}
+# Always include the CMake build extension so that source distributions work correctly.
+# The IOWARP_BUNDLE_BINARIES flag controls whether binaries are bundled into the wheel
+# or installed to the system prefix (for source installs).
+ext_modules = [
+    CMakeExtension(
+        "iowarp_core._native",
+        sourcedir=".",
+    )
+]
+cmdclass = {
+    "build_ext": CMakeBuild,
+}
 
 
 if __name__ == "__main__":
