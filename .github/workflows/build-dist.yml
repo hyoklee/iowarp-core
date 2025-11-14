@@ -31,6 +31,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
+        fetch-depth: 0  # Fetch all history for setuptools-scm to determine version from tags
 
     - name: Set up Miniconda
       uses: conda-incubator/setup-miniconda@v3
